@@ -95,7 +95,8 @@ class App:
                 try:
                     item_path = item.path.replace("/", os.path.sep)  # Используем правильный разделитель путей
                     is_directory = item.is_dir()
-                    item_id = self.file_system_tree.insert(parent_item, "end", text=item.name, open=False if is_directory else "")
+                    open_state = "" if is_directory else "open"  # Изменили здесь
+                    item_id = self.file_system_tree.insert(parent_item, "end", text=item.name, open=open_state)
                     if is_directory:
                         # Если элемент является директорией, заполним ее содержимым
                         self.populate_file_system_tree(item_path, item_id)
