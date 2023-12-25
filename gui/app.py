@@ -1,11 +1,13 @@
 # gui/app.py
 import os
+from pathlib import Path
 import platform
 import subprocess
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import simpledialog
 from tkinter import filedialog
+from tkinter import ttk
 from ttkthemes import ThemedTk
 from gui.performance_window import PerformanceWindow
 from gui.processes_window import ProcessesWindow
@@ -22,6 +24,10 @@ class App:
 
         self.performance_window = None
         self.processes_window = None
+        
+        
+        self.file_system_window = None  # Добавьте эту строку
+
 
         container = tk.Frame(root)
         container.pack(fill="both", expand=True)
@@ -36,6 +42,11 @@ class App:
 
         utilities_menu = tk.Menu(mainmenu, tearoff=0)
         utilities_menu.add_command(label="Открыть файловый менеджер", command=self.open_file_manager)
+       
+       
+        utilities_menu.add_command(label="Открыть системный менеджер", command=self.open_system_manager)
+       
+       
         utilities_menu.add_command(label="Выполнить поиск", command=self.execute_search)
         utilities_menu.add_command(label="О приложении", command=self.show_about)
         utilities_menu.add_separator()
@@ -48,6 +59,67 @@ class App:
         button2.pack(pady=10, fill="both", expand=True)
         button3.pack(pady=10, fill="both", expand=True)
         button4.pack(pady=10, fill="both", expand=True)
+
+
+
+
+
+    def open_system_manager(self):
+        if self.file_system_window:
+            self.file_system_window.destroy()
+
+        # Создадим новое окно для отображения файловой системы
+        self.file_system_window = tk.Toplevel(self.root)
+        self.file_system_window.title("Файловый Менеджер")
+        self.file_system_window.geometry("600x400")
+
+        # Treeview для отображения файловой системы
+        self.file_system_tree = ttk.Treeview(self.file_system_window)
+        self.file_system_tree.pack(side="left", fill="both", expand=True)
+        self.file_system_tree.heading("#0", text="Файловая Система", anchor="w")
+        self.file_system_tree.bind("<Double-1>", self.on_file_system_tree_double_click)
+        self.file_system_tree.bind("<ButtonRelease-1>", self.on_file_system_tree_click)
+
+        # Полоса прокрутки для Treeview
+        tree_scroll = ttk.Scrollbar(self.file_system_window, orient="vertical", command=self.file_system_tree.yview)
+        tree_scroll.pack(side="right", fill="y")
+        self.file_system_tree.configure(yscrollcommand=tree_scroll.set)
+
+        # Получим корневой каталог в зависимости от операционной системы
+        root_dir = Path("C:\\") if platform.system() == "Windows" else Path("/")
+        # Вставим корневой каталог в Treeview
+        self.file_system_tree.insert("", "end", text=str(root_dir), open=True)
+
+        # Заполним Treeview содержимым корневого каталога
+        self.populate_file_system_tree(root_dir, "")
+
+    def populate_file_system_tree(self, directory, parent_item=""):
+        try:
+            for item in directory.iterdir():
+                is_directory = item.is_dir()
+                item_id = self.file_system_tree.insert(parent_item, "end", text=item.stem, open=False if is_directory else "")
+                if is_directory:
+                    # Если элемент является директорией, заполним ее содержимым
+                    self.populate_file_system_tree(item, item_id)
+        except Exception as e:
+            print(f"Ошибка при заполнении каталога {directory}: {e}")
+
+    def on_file_system_tree_double_click(self, event):
+        selected_item = self.file_system_tree.selection()
+        if selected_item:
+            item_path = Path(self.file_system_tree.item(selected_item)["text"])
+            if item_path.is_dir():
+                self.populate_file_system_tree(item_path, selected_item)
+
+    def on_file_system_tree_click(self, event):
+        selected_item = self.file_system_tree.selection()
+        if selected_item:
+            print(f"Выбран элемент: {self.file_system_tree.item(selected_item)['text']}")
+
+
+
+
+
 
     def show_performance(self):
         self.root.withdraw()
