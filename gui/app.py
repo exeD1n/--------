@@ -36,7 +36,8 @@ class App:
         button2 = tk.Button(container, text="Просмотр процессов", command=self.show_processes)
         button3 = tk.Button(container, text="Встроенный терминал", command=self.open_terminal)
         button4 = tk.Button(container, text="Информация о каналах", command=self.show_channel_info)
-
+        
+        
         mainmenu = tk.Menu(self.root)
         self.root.config(menu=mainmenu)
 
