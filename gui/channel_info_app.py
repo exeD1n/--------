@@ -1,4 +1,5 @@
 # gui/channel_info_app.py
+import platform
 import subprocess
 import tkinter as tk
 import psutil
@@ -13,9 +14,21 @@ class ChannelInfoApp:
         label = tk.Label(self.master, text="Информация о каналах в операционной системе:")
         label.pack()
 
+        self.canvas = tk.Canvas(self.master)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.scrollbar = tk.Scrollbar(self.master, command=self.canvas.yview)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox('all')))
+
+        self.frame = tk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.frame, anchor='nw')
+
         for process in self.processes_info:
             button_text = f"PID: {process['pid']}, Имя: {process['name']}"
-            button = tk.Button(self.master, text=button_text, command=lambda info=process['pid']: self.show_connection_info(info))
+            button = tk.Button(self.frame, text=button_text, command=lambda info=process['pid']: self.show_connection_info(info))
             button.pack()
 
         # Кнопка для возвращения в главное меню
@@ -25,12 +38,22 @@ class ChannelInfoApp:
     def get_os_channels(self):
         # Получаем информацию о процессах и их каналах через subprocess
         try:
-            result = subprocess.run(["netstat", "-ano"], stdout=subprocess.PIPE, text=True, check=True)
+            netstat_cmd = self.get_netstat_command()
+            result = subprocess.run(netstat_cmd, stdout=subprocess.PIPE, text=True, check=True)
             processes_info = self.parse_netstat_output(result.stdout)
             return processes_info
         except subprocess.CalledProcessError as e:
             print(f"Error executing netstat: {e}")
             return []
+
+    def get_netstat_command(self):
+        # Возвращает соответствующую команду netstat в зависимости от операционной системы
+        if platform.system() == "Windows":
+            return ["netstat", "-ano"]
+        elif platform.system() == "Linux":
+            return ["netstat", "-tulpn"]
+        else:
+            raise NotImplementedError("Unsupported operating system")
 
     def parse_netstat_output(self, netstat_output):
         # Парсим вывод netstat и формируем структуру данных
@@ -50,7 +73,8 @@ class ChannelInfoApp:
     def show_connection_info(self, pid):
         # Дополнительная информация о каналах для выбранного процесса
         try:
-            result = subprocess.run(["netstat", "-ano"], stdout=subprocess.PIPE, text=True, check=True)
+            netstat_cmd = self.get_netstat_command()
+            result = subprocess.run(netstat_cmd, stdout=subprocess.PIPE, text=True, check=True)
             connection_info = self.parse_process_connections(result.stdout, pid)
             self.show_connection_window(connection_info)
         except subprocess.CalledProcessError as e:
