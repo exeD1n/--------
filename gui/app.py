@@ -103,8 +103,9 @@ class App:
                     else:
                         # Если элемент - файл, добавим его в дерево с указанием расширения
                         self.file_system_tree.insert(item_id, "end", text=f"{item.name} ({item.name.split('.')[-1] if '.' in item.name else ''})")
-                except PermissionError as pe:
-                    print(f"Ошибка при обработке элемента {item.path}: {pe}")
+                except (PermissionError, FileNotFoundError) as e:
+                    # Игнорируем ошибки доступа и отсутствия файла
+                    print(f"Пропущен элемент {item.path}: {e}")
         except Exception as e:
             print(f"Ошибка при заполнении каталога {directory}: {e}")
 
