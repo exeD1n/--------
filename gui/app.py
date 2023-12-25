@@ -93,7 +93,7 @@ class App:
         try:
             for item in os.scandir(directory):
                 try:
-                    item_path = item.path
+                    item_path = item.path.replace("/", os.path.sep)  # Используем правильный разделитель путей
                     is_directory = item.is_dir()
                     item_id = self.file_system_tree.insert(parent_item, "end", text=item.name, open=False if is_directory else "")
                     if is_directory:
