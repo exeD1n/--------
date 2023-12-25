@@ -90,13 +90,11 @@ class App:
 
     def populate_file_system_tree(self, directory, parent_item=""):
         try:
-            for item in os.listdir(directory):
-                item_path = os.path.join(directory, item)
-                is_directory = os.path.isdir(item_path)
-                item_id = self.file_system_tree.insert(parent_item, "end", text=item, open=False if is_directory else "")
-                if is_directory:
-                    # Если элемент является директорией, заполним ее содержимым
-                    self.populate_file_system_tree(item_path, item_id)
+            for root, dirs, files in os.walk(directory):
+                for item in dirs + files:
+                    item_path = os.path.join(root, item)
+                    is_directory = os.path.isdir(item_path)
+                    item_id = self.file_system_tree.insert(parent_item, "end", text=item, open=False if is_directory else "")
         except Exception as e:
             print(f"Ошибка при заполнении каталога {directory}: {e}")
 
