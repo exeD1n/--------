@@ -110,7 +110,7 @@ class App:
     def on_file_system_tree_double_click(self, event):
         selected_item = self.file_system_tree.selection()
         if selected_item:
-            item_path = os.path.join(*selected_item)
+            item_path = os.path.join(*selected_item).replace("/", os.path.sep)
             if os.path.isdir(item_path):
                 self.populate_file_system_tree(item_path, selected_item)
 
