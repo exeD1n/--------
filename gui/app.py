@@ -58,9 +58,9 @@ class App:
         self.processes_window = ProcessesWindow(self.root, self.show_main_menu)
 
     def open_terminal(self):
-        self.root.destroy()
-        root = ThemedTk(theme="arc")
-        terminal_gui = TerminalGUI(root)
+        self.root.withdraw()
+        root = tk.Tk()
+        terminal_gui = TerminalGUI(root, self.show_main_menu)
         root.mainloop()
 
     def show_channel_info(self):

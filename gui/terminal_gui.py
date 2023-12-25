@@ -5,8 +5,9 @@ import subprocess
 import platform
 
 class TerminalGUI:
-    def __init__(self, master):
+    def __init__(self, master, return_to_main_menu_callback):
         self.master = master
+        self.return_to_main_menu_callback = return_to_main_menu_callback
         master.title("Графический терминал")
 
         # Создаем текстовое поле для вывода результатов
@@ -29,9 +30,6 @@ class TerminalGUI:
         # Получаем команду из поля ввода
         command = self.input_entry.get()
 
-        # Очищаем текстовое поле вывода
-        self.output_text.delete(1.0, tk.END)
-
         try:
             # Проверяем платформу для корректного запуска команд
             if platform.system() == "Windows":
@@ -49,13 +47,22 @@ class TerminalGUI:
             # Получаем результат выполнения команды
             output, error = process.communicate()
 
+            # Очищаем текстовое поле вывода
+            self.output_text.delete(1.0, tk.END)
+
             # Выводим результат в текстовое поле
             self.output_text.insert(tk.END, output)
             self.output_text.insert(tk.END, error)
 
         except Exception as e:
             # Handle exceptions and display the error message
+            self.output_text.delete(1.0, tk.END)
             self.output_text.insert(tk.END, f"Error: {str(e)}")
-    
+
     def return_to_main_menu(self):
+        # Закрываем окно терминала
         self.master.destroy()
+
+        # Возвращаемся в главное меню, вызывая колбэк
+        if self.return_to_main_menu_callback:
+            self.return_to_main_menu_callback()
