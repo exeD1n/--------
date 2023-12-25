@@ -36,61 +36,22 @@ class ChannelInfoApp:
         return_button.pack(pady=10, fill="both", expand=True)
 
     def get_os_channels(self):
-        # Получаем информацию о процессах и их каналах через subprocess
-        try:
-            netstat_cmd = self.get_netstat_command()
-            result = subprocess.run(netstat_cmd, stdout=subprocess.PIPE, text=True, check=True)
-            processes_info = self.parse_netstat_output(result.stdout)
-            return processes_info
-        except subprocess.CalledProcessError as e:
-            print(f"Error executing netstat: {e}")
-            return []
-
-    def get_netstat_command(self):
-        # Возвращает соответствующую команду netstat в зависимости от операционной системы
-        if platform.system() == "Windows":
-            return ["netstat", "-ano"]
-        elif platform.system() == "Linux":
-            return ["netstat", "-tulpn"]
-        else:
-            raise NotImplementedError("Unsupported operating system")
-
-    def parse_netstat_output(self, netstat_output):
-        # Парсим вывод netstat и формируем структуру данных
+        # Получаем информацию о процессах и их каналах через psutil
         processes_info = []
-        lines = netstat_output.splitlines()
-        for line in lines[4:]:  # Skip the first 4 lines as they are headers
-            parts = line.split()
-            if len(parts) >= 5:
-                pid = int(parts[-1])
-                name = "Unknown"
-                connections = [
-                    {"type": parts[0], "laddr": parts[1], "raddr": parts[2]}
-                ]
-                processes_info.append({"pid": pid, "name": name, "connections": connections})
+        for process in psutil.process_iter(['pid', 'name', 'connections']):
+            process_info = {
+                'pid': process.info['pid'],
+                'name': process.info['name'],
+                'connections': process.info['connections']
+            }
+            if process_info['connections']:
+                processes_info.append(process_info)
         return processes_info
 
     def show_connection_info(self, pid):
         # Дополнительная информация о каналах для выбранного процесса
-        try:
-            netstat_cmd = self.get_netstat_command()
-            result = subprocess.run(netstat_cmd, stdout=subprocess.PIPE, text=True, check=True)
-            connection_info = self.parse_process_connections(result.stdout, pid)
-            self.show_connection_window(connection_info)
-        except subprocess.CalledProcessError as e:
-            print(f"Error executing netstat: {e}")
-
-    def parse_process_connections(self, netstat_output, pid):
-        # Парсим вывод netstat и получаем информацию о каналах для конкретного процесса
-        connection_info = []
-        lines = netstat_output.splitlines()
-        for line in lines[4:]:  # Skip the first 4 lines as they are headers
-            parts = line.split()
-            if len(parts) >= 5:
-                current_pid = int(parts[-1])
-                if current_pid == pid:
-                    connection_info.append({"type": parts[0], "laddr": parts[1], "raddr": parts[2]})
-        return connection_info
+        connection_info = [conn for process in self.processes_info if process['pid'] == pid for conn in process['connections']]
+        self.show_connection_window(connection_info)
 
     def show_connection_window(self, connection_info):
         # Отображаем окно с информацией о каналах
@@ -98,7 +59,7 @@ class ChannelInfoApp:
         connection_window.title("Дополнительная информация о каналах")
 
         for connection in connection_info:
-            label_text = f"Тип: {connection['type']}, Локальный адрес: {connection['laddr']}, Удаленный адрес: {connection['raddr']}"
+            label_text = f"Тип: {connection.type}, Локальный адрес: {connection.laddr}, Удаленный адрес: {connection.raddr}"
             label = tk.Label(connection_window, text=label_text)
             label.pack()
 
