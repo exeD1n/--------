@@ -97,17 +97,13 @@ class App:
         try:
             for item in directory.iterdir():
                 is_directory = item.is_dir()
+                item_id = self.file_system_tree.insert(parent_item, "end", text=item.stem, open=False if is_directory else "")
                 if is_directory:
                     # Если элемент является директорией, рекурсивно заполним ее содержимым
-                    item_id = self.file_system_tree.insert(parent_item, "end", text=item.stem, open=False)
                     self.populate_file_system_tree(item, item_id)
                 else:
-                    # Если элемент - файл, добавим его в дерево с указанием расширения
-                    self.file_system_tree.insert(parent_item, "end", text=f"{item.stem}.{item.suffix}")
-    
-                    # Предотвратим дальнейший переход вглубь
-                    self.file_system_tree.insert(parent_item, "end", text="--- Дальнейший переход невозможен ---", open=False)
-    
+                    # Если элемент - файл, добавим его в дерево
+                    self.file_system_tree.insert(item_id, "end", text=item.name)
         except Exception as e:
             print(f"Ошибка при заполнении каталога {directory}: {e}")
 
