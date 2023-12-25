@@ -78,7 +78,6 @@ class App:
         self.file_system_tree.pack(side="left", fill="both", expand=True)
         self.file_system_tree.heading("#0", text="Файловая Система", anchor="w")
         self.file_system_tree.bind("<Double-1>", self.on_file_system_tree_double_click)
-        self.file_system_tree.bind("<ButtonRelease-1>", self.on_file_system_tree_click)
 
         # Полоса прокрутки для Treeview
         tree_scroll = ttk.Scrollbar(self.file_system_window, orient="vertical", command=self.file_system_tree.yview)
@@ -86,39 +85,27 @@ class App:
         self.file_system_tree.configure(yscrollcommand=tree_scroll.set)
 
         # Получим корневой каталог в зависимости от операционной системы
-        root_dir = Path("C:\\") if platform.system() == "Windows" else Path("/")
-        # Вставим корневой каталог в Treeview
-        self.file_system_tree.insert("", "end", text=str(root_dir), open=True)
-
-        # Заполним Treeview содержимым корневого каталога
-        self.populate_file_system_tree(root_dir, "")
+        root_dir = "/" if os.name == "posix" else "C:/"
+        self.populate_file_system_tree(root_dir)
 
     def populate_file_system_tree(self, directory, parent_item=""):
         try:
-            for item in directory.iterdir():
-                is_directory = item.is_dir()
+            for item in os.listdir(directory):
+                item_path = os.path.join(directory, item)
+                is_directory = os.path.isdir(item_path)
+                item_id = self.file_system_tree.insert(parent_item, "end", text=item, open=False if is_directory else "")
                 if is_directory:
-                    # Если элемент является директорией, рекурсивно заполним ее содержимым
-                    item_id = self.file_system_tree.insert(parent_item, "end", text=item.name, open=False)
-                    self.populate_file_system_tree(item, item_id)
-                else:
-                    # Если элемент - файл, добавим его в дерево с указанием расширения
-                    self.file_system_tree.insert(parent_item, "end", text=f"{item.name} ({item.suffix})")
-    
+                    # Если элемент является директорией, заполним ее содержимым
+                    self.populate_file_system_tree(item_path, item_id)
         except Exception as e:
             print(f"Ошибка при заполнении каталога {directory}: {e}")
 
     def on_file_system_tree_double_click(self, event):
         selected_item = self.file_system_tree.selection()
         if selected_item:
-            item_path = Path(self.file_system_tree.item(selected_item)["text"])
-            if item_path.is_dir():
+            item_path = os.path.join(*selected_item)
+            if os.path.isdir(item_path):
                 self.populate_file_system_tree(item_path, selected_item)
-
-    def on_file_system_tree_click(self, event):
-        selected_item = self.file_system_tree.selection()
-        if selected_item:
-            print(f"Выбран элемент: {self.file_system_tree.item(selected_item)['text']}")
 
 
 
